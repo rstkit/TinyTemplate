@@ -70,6 +70,10 @@ impl<'render, 'template> RenderContext<'render, 'template> {
                 }
             }
 
+            if let PathStep::Name("@root") = step {
+                return Ok(current);
+            }
+
             let step: &str = &*step;
 
             match current.get(step) {
@@ -388,6 +392,12 @@ mod test {
     fn other_templates() -> HashMap<&'static str, Template<'static>> {
         let mut map = HashMap::new();
         map.insert("my_macro", compile("{value}"));
+        map
+    }
+
+    fn other_root_templates() -> HashMap<&'static str, Template<'static>> {
+        let mut map = HashMap::new();
+        map.insert("my_macro", compile("{nested.value}"));
         map
     }
 
@@ -716,6 +726,23 @@ mod test {
             )
             .unwrap();
         assert_eq!("151", &string);
+    }
+
+    #[test]
+    fn test_call_passing_root() {
+        let template = compile("{{ call my_macro with @root }}");
+        let context = context();
+        let template_registry = other_root_templates();
+        let formatter_registry = formatters();
+        let string = template
+            .render(
+                &context,
+                &template_registry,
+                &formatter_registry,
+                &default_formatter(),
+            )
+            .unwrap();
+        assert_eq!("10", &string);
     }
 
     #[test]
